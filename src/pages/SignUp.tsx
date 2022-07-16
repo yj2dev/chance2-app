@@ -18,6 +18,19 @@ import randomNameGenerator from 'korean-random-names-generator';
 import DeviceInfo from 'react-native-device-info';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
+import {
+  check,
+  checkMultiple,
+  NotificationOption,
+  NotificationSettings,
+  Permission,
+  PERMISSIONS,
+  PermissionStatus,
+  request,
+  requestMultiple,
+  RESULTS,
+} from 'react-native-permissions';
+
 type SignUpScreenProps = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
 function SignUp({navigation}: SignUpScreenProps) {
@@ -32,7 +45,75 @@ function SignUp({navigation}: SignUpScreenProps) {
 
   const canGoNext = phoneNumber && nickname;
 
+  const askPermission = async () => {
+    console.log('Platform.OS >> ', Platform.OS);
+    if (Platform.OS !== 'android') {
+      console.log('안드로이드 아님');
+      return;
+    }
+    try {
+      const result = await request(PERMISSIONS.ANDROID.RECORD_AUDIO);
+      console.log('result >> ', result);
+      if (result === RESULTS.GRANTED) {
+        // do something
+      }
+    } catch (error) {
+      console.log('askPermission', error);
+    }
+  };
+
+  const askPermission2 = async () => {
+    console.log('Platform.OS >> ', Platform.OS);
+    if (Platform.OS !== 'android') {
+      console.log('안드로이드 아님');
+      return;
+    }
+    try {
+      const result = await request(PERMISSIONS.ANDROID.CAMERA);
+      console.log('result >> ', result);
+      if (result === RESULTS.GRANTED) {
+        // do something
+      }
+    } catch (error) {
+      console.log('askPermission', error);
+    }
+  };
+
+  const askMultiplePermission = async () => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+    try {
+      const result = await requestMultiple([
+        PERMISSIONS.ANDROID.READ_PHONE_NUMBERS,
+        PERMISSIONS.ANDROID.CAMERA,
+        PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION,
+        PERMISSIONS.ANDROID.CALL_PHONE,
+        PERMISSIONS.ANDROID.READ_CONTACTS,
+        PERMISSIONS.ANDROID.READ_SMS,
+      ]);
+      console.log('Multiple result >> ', result);
+    } catch (error) {
+      console.log('askPermission', error);
+    }
+  };
+
   useEffect(() => {
+    askPermission();
+    askPermission2();
+    // askMultiplePermission();
+
+    // requestMultiple([
+    //   PERMISSIONS.ANDROID.CAMERA,
+    //   PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION,
+    // ]).then(statuses => {
+    //   console.log('Camera', statuses[PERMISSIONS.ANDROID.CAMERA]);
+    //   console.log(
+    //     'ACCESS_BACKGROUND_LOCATION',
+    //     statuses[PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION],
+    //   );
+    // });
+
     getRandomNickname();
     DeviceInfo.getUniqueId().then(uniqueId => {
       console.log('uniqueId >> ', uniqueId);
@@ -45,7 +126,7 @@ function SignUp({navigation}: SignUpScreenProps) {
 
   const getRandomNickname = useCallback(() => {
     // TODO: 중복되는 닉네임인지 확인
-    const rNickname = randomNameGenerator().toString().replace(' ', '');
+    const rNickname = randomNameGenerator().toString().replace(/ /gi, '');
     const response = axios.get(`/user/${rNickname}/nickname-check`);
     console.log('response >> ', response);
     setNickname(rNickname);
