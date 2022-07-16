@@ -26,11 +26,12 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
-
+import SplashScreen from 'react-native-splash-screen';
 const Section: React.FC<{
   title: string;
 }> = ({children, title}) => {
   const isDarkMode = useColorScheme() === 'dark';
+  SplashScreen.hide();
   return (
     <View style={styles.sectionContainer}>
       <Text
