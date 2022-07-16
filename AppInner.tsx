@@ -37,17 +37,6 @@ export type RootStackParamList = {
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-const TabOptionStyle: any = {
-  headerStyle: {
-    backgroundColor: '#1f6038',
-  },
-  headerTintColor: '#ffffff',
-  headerTitleStyle: {
-    fontWeight: 'bold',
-  },
-  headerTitleAlign: 'center',
-};
-
 function AppInner() {
   const isLoggedIn = useSelector((state: RootState) => !!state.user.email);
   const dispatch = useAppDispatch();
@@ -73,6 +62,7 @@ function AppInner() {
             name="CustomJob"
             component={CustomJob}
             options={{
+              ...TabOptionStyle,
               title: '맞춤형',
               tabBarIcon: () => <AntDesignIcon name="pushpino" size={20} />,
             }}
@@ -81,6 +71,7 @@ function AppInner() {
             name="JobState"
             component={JobState}
             options={{
+              ...TabOptionStyle,
               title: '구직현황',
               tabBarIcon: () => <AntDesignIcon name="hourglass" size={20} />,
             }}
@@ -89,6 +80,7 @@ function AppInner() {
             name="MyPage"
             component={MyPage}
             options={{
+              ...TabOptionStyle,
               title: '마이페이지',
               tabBarIcon: () => <AntDesignIcon name="user" size={20} />,
             }}
@@ -100,9 +92,12 @@ function AppInner() {
             name="Home"
             component={Home}
             options={{
+              ...TabOptionStyle,
               title: '홈',
               headerShown: false,
-              tabBarIcon: () => <AntDesignIcon name="home" size={20} />,
+              tabBarIcon: ({focused, color = '#666666'}) => (
+                <AntDesignIcon name="home" size={20} color={color} />
+              ),
             }}
           />
           <Tab.Screen
@@ -111,7 +106,9 @@ function AppInner() {
             options={{
               ...TabOptionStyle,
               title: '로그인',
-              tabBarIcon: () => <FontAwesome name="sign-in" size={20} />,
+              tabBarIcon: ({focused, color = '#666666'}) => (
+                <FontAwesome name="sign-in" size={20} color={color} />
+              ),
             }}
           />
           <Tab.Screen
@@ -120,10 +117,11 @@ function AppInner() {
             options={{
               ...TabOptionStyle,
               title: '회원가입',
-              tabBarIcon: () => (
+              tabBarIcon: ({focused, color = '#666666'}) => (
                 <MaterialCommunityIcons
                   name="card-account-details-outline"
                   size={20}
+                  color={color}
                 />
               ),
             }}
@@ -133,5 +131,17 @@ function AppInner() {
     </NavigationContainer>
   );
 }
+
+const TabOptionStyle: any = {
+  tabBarActiveTintColor: '#1f6038',
+  headerStyle: {
+    backgroundColor: '#1f6038',
+  },
+  headerTintColor: '#ffffff',
+  headerTitleStyle: {
+    fontWeight: 'bold',
+  },
+  headerTitleAlign: 'center',
+};
 
 export default AppInner;

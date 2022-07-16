@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -11,15 +12,16 @@ import {
 } from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../AppInner';
-// import DismissKeyboardView from '../components/DismissKeyboardView';
 import axios, {AxiosError} from 'axios';
 import Config from 'react-native-config';
 import randomNameGenerator from 'korean-random-names-generator';
+import DeviceInfo from 'react-native-device-info';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
 type SignUpScreenProps = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
 function SignUp({navigation}: SignUpScreenProps) {
+  const [activeUserName, setActiveUserName] = useState('고령유저');
   const [loading, setLoading] = useState(false);
 
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -32,6 +34,13 @@ function SignUp({navigation}: SignUpScreenProps) {
 
   useEffect(() => {
     getRandomNickname();
+    DeviceInfo.getUniqueId().then(uniqueId => {
+      console.log('uniqueId >> ', uniqueId);
+      // iOS: "FCDBD8EF-62FC-4ECB-B2F5-92C9E79AC7F9"
+      // Android: "dd96dec43fb81c97"
+      // Windows: "{2cf7cb3c-da7a-d508-0d7f-696bb51185b4}"
+    });
+    getPhoneNumber();
   }, []);
 
   const getRandomNickname = useCallback(() => {
@@ -40,6 +49,13 @@ function SignUp({navigation}: SignUpScreenProps) {
     const response = axios.get(`/user/${rNickname}/nickname-check`);
     console.log('response >> ', response);
     setNickname(rNickname);
+  }, []);
+
+  const getPhoneNumber = useCallback(() => {
+    DeviceInfo.getPhoneNumber().then(pNumber => {
+      console.log('pNumber >> ', pNumber);
+      // Android: null return: no permission, empty string: unprogrammed or empty SIM1, e.g. "+15555215558": normal return value
+    });
   }, []);
 
   const onChangePhoneNumber = useCallback(text => {
@@ -58,19 +74,74 @@ function SignUp({navigation}: SignUpScreenProps) {
 
   const onSubmit = useCallback(() => {}, []);
 
-  console.log('Config.API_URL >> ', Config.API_URL);
-
   return (
     <KeyboardAwareScrollView>
       <View style={styles.signUpTypeWrapper}>
-        <Pressable style={styles.signUpType}>
-          <Text>고령유저</Text>
+        <Pressable
+          onPress={() => {
+            setActiveUserName('고령유저');
+          }}
+          style={
+            activeUserName == '고령유저'
+              ? [styles.signUpType, styles.signUpTypeActive]
+              : styles.signUpType
+          }>
+          <Image
+            source={require('../assets/images/default-user.png')}
+            style={styles.signUpTypeImage}
+          />
+          <Text
+            style={
+              activeUserName === '고령유저'
+                ? [styles.signUpTypeText, styles.signUpTypeTextActive]
+                : styles.signUpTypeText
+            }>
+            고령유저
+          </Text>
         </Pressable>
-        <Pressable style={styles.signUpType}>
-          <Text>일반유저</Text>
+        <Pressable
+          onPress={() => {
+            setActiveUserName('일반유저');
+          }}
+          style={
+            activeUserName === '일반유저'
+              ? [styles.signUpType, styles.signUpTypeActive]
+              : styles.signUpType
+          }>
+          <Image
+            source={require('../assets/images/old-user.png')}
+            style={styles.signUpTypeImage}
+          />
+          <Text
+            style={
+              activeUserName === '일반유저'
+                ? [styles.signUpTypeText, styles.signUpTypeTextActive]
+                : styles.signUpTypeText
+            }>
+            일반유저
+          </Text>
         </Pressable>
-        <Pressable style={styles.signUpType}>
-          <Text>기관유저</Text>
+        <Pressable
+          onPress={() => {
+            setActiveUserName('기관유저');
+          }}
+          style={
+            activeUserName === '기관유저'
+              ? [styles.signUpType, styles.signUpTypeActive]
+              : styles.signUpType
+          }>
+          <Image
+            source={require('../assets/images/institution-user.png')}
+            style={styles.signUpTypeImage}
+          />
+          <Text
+            style={
+              activeUserName === '기관유저'
+                ? [styles.signUpTypeText, styles.signUpTypeTextActive]
+                : styles.signUpTypeText
+            }>
+            기관유저
+          </Text>
         </Pressable>
       </View>
       <View style={styles.inputWrapper}>
@@ -120,7 +191,9 @@ function SignUp({navigation}: SignUpScreenProps) {
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.SignUpButtonText}>회원가입</Text>
+            <Text style={styles.SignUpButtonText}>
+              {activeUserName}&nbsp;회원가입
+            </Text>
           )}
         </Pressable>
       </View>
@@ -129,17 +202,36 @@ function SignUp({navigation}: SignUpScreenProps) {
 }
 
 const styles = StyleSheet.create({
+  signUpTypeActive: {
+    backgroundColor: '#1f6038',
+  },
+  signUpTypeImage: {
+    width: 50,
+    height: 50,
+    marginBottom: 8,
+  },
   signUpTypeWrapper: {
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-evenly',
+    marginTop: 24,
   },
+  signUpTypeText: {
+    fontWeight: 'bold',
+    color: '#1f6038',
+  },
+  signUpTypeTextActive: {color: '#ffffff'},
   signUpType: {
-    borderColor: '#000000',
-    borderWidth: 1,
+    borderColor: '#1f6038',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    borderWidth: 3,
+    borderRadius: 6,
   },
   textInput: {
     padding: 5,
+    color: '#000000',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   inputWrapper: {
