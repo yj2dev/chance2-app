@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text, View} from 'react-native';
+import {StyleSheet, Text, View} from 'react-native';
 import {useSelector} from 'react-redux';
 import {RootState} from '../store/reducer';
 import {useAppDispatch} from '../store';
@@ -9,10 +9,25 @@ function Home() {
   // const dispatch = useAppDispatch();
 
   return (
-    <View>
-      <Text>123</Text>
+    <View style={styles.headerWrapper}>
+      <Text style={styles.header}>우연이</Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  headerWrapper: {
+    display: 'flex',
+    alignItems: 'center',
+    borderWidth: 1,
+    paddingVertical: 8,
+    borderColor: '#000000',
+  },
+  header: {
+    fontSize: 24,
+    fontFamily: 'JalnanOTF',
+    color: '#1f6038',
+  },
+});
 
 export default Home;

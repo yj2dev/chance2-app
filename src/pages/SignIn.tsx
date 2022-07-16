@@ -16,6 +16,7 @@ import userSlice from '../slices/user';
 import Config from 'react-native-config';
 import axios, {AxiosError} from 'axios';
 import EncryptedStorage from 'react-native-encrypted-storage';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
 type SignInScreenProps = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 function SignIn({navigation}: SignInScreenProps) {
@@ -89,7 +90,7 @@ function SignIn({navigation}: SignInScreenProps) {
   };
 
   return (
-    <View>
+    <KeyboardAwareScrollView>
       <Text style={styles.label} onPress={onPressGetPhoneNumber}>
         번호 내놔
       </Text>
@@ -146,7 +147,7 @@ function SignIn({navigation}: SignInScreenProps) {
           <Text>회원가입하기</Text>
         </Pressable>
       </View>
-    </View>
+    </KeyboardAwareScrollView>
   );
 }
 
