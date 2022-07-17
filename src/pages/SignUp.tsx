@@ -3,27 +3,19 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
-  unstable_enableLogBox,
   View,
 } from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../AppInner';
-import axios, {AxiosError} from 'axios';
+import axios from 'axios';
 import Config from 'react-native-config';
 import randomNameGenerator from 'korean-random-names-generator';
 import DeviceInfo from 'react-native-device-info';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
-import {
-  PERMISSIONS,
-  request,
-  requestMultiple,
-  RESULTS,
-} from 'react-native-permissions';
 import RNOtpVerify from 'react-native-otp-verify';
 
 type SignUpScreenProps = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
@@ -36,6 +28,7 @@ function SignUp({navigation}: SignUpScreenProps) {
   const [verifyNumber, setVerifyNumber] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [nickname, setNickname] = useState('');
+  const [showInputVerifyNumber, setShowInputVerifyNumber] = useState(false);
 
   const phoneNumberRef = useRef<TextInput | null>(null);
   const nameRef = useRef<TextInput | null>(null);
@@ -43,13 +36,10 @@ function SignUp({navigation}: SignUpScreenProps) {
   const canGoNext = phoneNumber && nickname;
 
   useEffect(() => {
-    // 문자 식별코드 생성
-    getIdentificationCode();
-    startListeningForOtp();
-    // 휴대번호 가져오기
-    getPhoneNumber();
-    // 랜덤 닉네임 생성
-    getRandomNickname();
+    getIdentificationCode(); // 문자 식별코드 생성
+    startListeningForOtp(); // 문자 인증코드 자동입력
+    getPhoneNumber(); // 휴대번호 가져오기
+    getRandomNickname(); // 랜덤 닉네임 생성
   }, []);
 
   const getIdentificationCode = useCallback(() => {
@@ -67,9 +57,8 @@ function SignUp({navigation}: SignUpScreenProps) {
   };
 
   const otpHandler = (message: string) => {
-    console.log('message >> ', message);
-    // const number = /(\d{4})/g.exec(message)[1];
-    // setVerifyNumber(number);
+    const number = message.replace(/[^0-9]\g/, '').substring(0, 4);
+    setVerifyNumber(number);
   };
 
   const sendVerifyNumber = useCallback(async () => {
@@ -97,14 +86,6 @@ function SignUp({navigation}: SignUpScreenProps) {
     // console.log('res.data >> ', res.data);
   }, [phoneNumber, identificationCode, nickname]);
 
-  const getRandomNickname = useCallback(() => {
-    // TODO: 중복되는 닉네임인지 확인
-    const rNickname = randomNameGenerator().toString().replace(/ /gi, '');
-    // const response = axios.get(`/user/${rNickname}/nickname-check`);
-    // console.log('response >> ', response);
-    setNickname(rNickname);
-  }, []);
-
   const getPhoneNumber = useCallback(() => {
     DeviceInfo.getPhoneNumber().then(pNumber => {
       const _pNumber = '0' + pNumber.substring(3, pNumber.length);
@@ -113,17 +94,37 @@ function SignUp({navigation}: SignUpScreenProps) {
     });
   }, []);
 
-  const onChangePhoneNumber = useCallback(text => {
-    const regex = /[^0-9]/g;
-    const value = text.replace(regex, '');
-    if (value.length < 12) {
-      setPhoneNumber(value.trim());
-    }
-  }, []);
+  const getRandomNickname = useCallback(() => {
+    // TODO: 중복되는 닉네임인지 확인
+    const rNickname = randomNameGenerator().toString().replace(/ /gi, '');
+    // const response = axios.get(`/user/${rNickname}/nickname-check`);
+    // console.log('response >> ', response);
+    setNickname(rNickname);
+  }, [nickname]);
+
+  const onChangePhoneNumber = useCallback(
+    text => {
+      const _text = text.replace(/[^0-9]/g, '');
+      if (_text.length < 12) {
+        setPhoneNumber(_text.trim());
+      }
+    },
+    [phoneNumber],
+  );
+
+  const onChangeVerifyNumber = useCallback(
+    text => {
+      const _text = text.replace(/[^0-9]/g, '');
+      if (_text.length < 5) {
+        setVerifyNumber(_text.trim());
+      }
+    },
+    [verifyNumber],
+  );
 
   const onChangeNickname = useCallback(
     text => {
-      if (text < 25) {
+      if (text.length < 25) {
         setNickname(text.trim());
       }
     },
@@ -217,9 +218,26 @@ function SignUp({navigation}: SignUpScreenProps) {
           blurOnSubmit={false}
         />
       </View>
-      <View>
-        <Text>인증번호: {verifyNumber}</Text>
-      </View>
+
+      {!showInputVerifyNumber && (
+        <View style={styles.inputWrapper}>
+          <Text style={styles.label}>인증번호</Text>
+          <TextInput
+            style={styles.textInput}
+            onChangeText={onChangeVerifyNumber}
+            placeholder="인증번호를 입력해주세요"
+            placeholderTextColor="#666"
+            textContentType="creditCardNumber"
+            keyboardType="number-pad"
+            value={verifyNumber}
+            returnKeyType="next"
+            clearButtonMode="while-editing"
+            // ref={phoneNumberRef}
+            onSubmitEditing={() => nameRef.current?.focus()}
+            blurOnSubmit={false}
+          />
+        </View>
+      )}
 
       <View style={styles.inputWrapper}>
         <Text style={styles.label}>닉네임</Text>
@@ -295,13 +313,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   inputWrapper: {
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
   },
   label: {
     fontWeight: 'bold',
     color: '#1f6038',
     fontSize: 16,
-    marginBottom: 10,
   },
   buttonWrapper: {
     alignItems: 'center',
@@ -311,7 +329,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 5,
-    marginBottom: 10,
+    marginVertical: 8,
   },
   SignUpButtonActive: {
     backgroundColor: '#1f6038',
