@@ -17,19 +17,13 @@ import Config from 'react-native-config';
 import randomNameGenerator from 'korean-random-names-generator';
 import DeviceInfo from 'react-native-device-info';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
-
 import {
-  check,
-  checkMultiple,
-  NotificationOption,
-  NotificationSettings,
-  Permission,
   PERMISSIONS,
-  PermissionStatus,
   request,
   requestMultiple,
   RESULTS,
 } from 'react-native-permissions';
+import RNOtpVerify from 'react-native-otp-verify';
 
 type SignUpScreenProps = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
@@ -45,6 +39,26 @@ function SignUp({navigation}: SignUpScreenProps) {
 
   const canGoNext = phoneNumber && nickname;
 
+  const [otp, setOtp] = useState('');
+
+  useEffect(() => {
+    const getHash = () =>
+      RNOtpVerify.getHash().then(console.log).catch(console.log);
+
+    const startListeningForOtp = () =>
+      RNOtpVerify.getOtp()
+        .then(p => RNOtpVerify.addListener(otpHandler))
+        .catch(p => console.log(p));
+
+    getHash();
+    startListeningForOtp();
+  });
+
+  const otpHandler = message => {
+    const otp = /(\d{4})/g.exec(message)[1];
+    setOtp(otp);
+  };
+
   const askPermission = async () => {
     console.log('Platform.OS >> ', Platform.OS);
     if (Platform.OS !== 'android') {
@@ -52,8 +66,11 @@ function SignUp({navigation}: SignUpScreenProps) {
       return;
     }
     try {
-      const result = await request(PERMISSIONS.ANDROID.RECORD_AUDIO);
+      const result = await request(PERMISSIONS.ANDROID.READ_SMS);
       console.log('result >> ', result);
+
+      getPhoneNumber();
+
       if (result === RESULTS.GRANTED) {
         // do something
       }
@@ -100,7 +117,7 @@ function SignUp({navigation}: SignUpScreenProps) {
 
   useEffect(() => {
     askPermission();
-    askPermission2();
+    // askPermission2();
     // askMultiplePermission();
 
     // requestMultiple([
@@ -134,7 +151,8 @@ function SignUp({navigation}: SignUpScreenProps) {
 
   const getPhoneNumber = useCallback(() => {
     DeviceInfo.getPhoneNumber().then(pNumber => {
-      console.log('pNumber >> ', pNumber);
+      const _pNumber = '0' + pNumber.substring(3, pNumber.length);
+      setPhoneNumber(_pNumber);
       // Android: null return: no permission, empty string: unprogrammed or empty SIM1, e.g. "+15555215558": normal return value
     });
   }, []);
@@ -242,6 +260,8 @@ function SignUp({navigation}: SignUpScreenProps) {
           blurOnSubmit={false}
         />
       </View>
+      <Text>OTP: {otp}</Text>
+
       <View style={styles.inputWrapper}>
         <Text style={styles.label}>닉네임</Text>
         <TextInput
