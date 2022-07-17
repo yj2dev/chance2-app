@@ -33,6 +33,7 @@ function SignUp({navigation}: SignUpScreenProps) {
   const [loading, setLoading] = useState(false);
 
   const [identificationCode, setIdentificationCode] = useState('');
+  const [verifyNumber, setVerifyNumber] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [nickname, setNickname] = useState('');
 
@@ -41,7 +42,15 @@ function SignUp({navigation}: SignUpScreenProps) {
 
   const canGoNext = phoneNumber && nickname;
 
-  const [otp, setOtp] = useState('');
+  useEffect(() => {
+    // 문자 식별코드 생성
+    getIdentificationCode();
+    startListeningForOtp();
+    // 휴대번호 가져오기
+    getPhoneNumber();
+    // 랜덤 닉네임 생성
+    getRandomNickname();
+  }, []);
 
   const getIdentificationCode = useCallback(() => {
     RNOtpVerify.getHash()
@@ -57,74 +66,16 @@ function SignUp({navigation}: SignUpScreenProps) {
       .catch(p => console.log(p));
   };
 
-  useEffect(() => {
-    getIdentificationCode();
-    startListeningForOtp();
-  });
-
-  const otpHandler = message => {
-    // const otp = /(\d{4})/g.exec(message)[1];
-    // setOtp(otp);
-  };
-
-  const askPermission = async () => {
-    if (Platform.OS !== 'android') {
-      return;
-    }
-
-    try {
-      const result = await request(PERMISSIONS.ANDROID.READ_SMS);
-      console.log('result >> ', result);
-
-      getPhoneNumber();
-
-      if (result === RESULTS.GRANTED) {
-        // do something
-      }
-    } catch (error) {
-      console.log('askPermission', error);
-    }
-  };
-
-  const askPermission2 = async () => {
-    console.log('Platform.OS >> ', Platform.OS);
-    if (Platform.OS !== 'android') {
-      console.log('안드로이드 아님');
-      return;
-    }
-    try {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      console.log('result >> ', result);
-      if (result === RESULTS.GRANTED) {
-        // do something
-      }
-    } catch (error) {
-      console.log('askPermission', error);
-    }
-  };
-
-  const askMultiplePermission = async () => {
-    if (Platform.OS !== 'android') {
-      return;
-    }
-    try {
-      const result = await requestMultiple([
-        PERMISSIONS.ANDROID.READ_PHONE_NUMBERS,
-        PERMISSIONS.ANDROID.READ_SMS,
-        PERMISSIONS.ANDROID.CAMERA,
-        PERMISSIONS.ANDROID.CALL_PHONE,
-        PERMISSIONS.ANDROID.READ_CONTACTS,
-        PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION,
-      ]);
-      console.log('Multiple result >> ', result);
-    } catch (error) {
-      console.log('askPermission', error);
-    }
+  const otpHandler = (message: string) => {
+    console.log('message >> ', message);
+    // const number = /(\d{4})/g.exec(message)[1];
+    // setVerifyNumber(number);
   };
 
   const sendVerifyNumber = useCallback(async () => {
     console.log('INFO >> ', phoneNumber, identificationCode, nickname);
     console.log('URL >> ', Config.API_URL);
+    return;
     await axios
       .post(`${Config.API_URL}/message/verify-number/send`, {
         phoneNumber,
@@ -134,7 +85,8 @@ function SignUp({navigation}: SignUpScreenProps) {
         console.log('res.data >> ', res.data);
       })
       .catch(console.error);
-  }, []);
+  }, [phoneNumber, identificationCode, nickname]);
+
   const onSubmitSignUp = useCallback(async () => {
     console.log('Try Signup...');
 
@@ -143,13 +95,7 @@ function SignUp({navigation}: SignUpScreenProps) {
     // const res = await axios.get(`${Config.API_URL}`);
     // // const res = await axios.get('http://localhost:8709');
     // console.log('res.data >> ', res.data);
-  }, []);
-
-  useEffect(() => {
-    askPermission();
-    getRandomNickname();
-    getPhoneNumber();
-  }, []);
+  }, [phoneNumber, identificationCode, nickname]);
 
   const getRandomNickname = useCallback(() => {
     // TODO: 중복되는 닉네임인지 확인
@@ -175,11 +121,14 @@ function SignUp({navigation}: SignUpScreenProps) {
     }
   }, []);
 
-  const onChangeNickname = useCallback(text => {
-    if (text < 25) {
-      setNickname(text.trim());
-    }
-  }, []);
+  const onChangeNickname = useCallback(
+    text => {
+      if (text < 25) {
+        setNickname(text.trim());
+      }
+    },
+    [nickname],
+  );
 
   return (
     <KeyboardAwareScrollView>
@@ -268,7 +217,9 @@ function SignUp({navigation}: SignUpScreenProps) {
           blurOnSubmit={false}
         />
       </View>
-      <Text>OTP: {otp}</Text>
+      <View>
+        <Text>인증번호: {verifyNumber}</Text>
+      </View>
 
       <View style={styles.inputWrapper}>
         <Text style={styles.label}>닉네임</Text>

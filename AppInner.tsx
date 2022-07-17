@@ -21,6 +21,7 @@ import JobState from './src/pages/JobState';
 import AntDesignIcon from 'react-native-vector-icons/AntDesign';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import usePermissions from './src/hooks/usePermissions';
 
 export type LoggedInParamList = {
   Orders: undefined;
@@ -42,13 +43,14 @@ function AppInner() {
   const dispatch = useAppDispatch();
 
   console.log('isLoggedIn >> ', isLoggedIn);
+  usePermissions();
 
   SplashScreen.hide();
 
   return (
     <NavigationContainer>
       {isLoggedIn ? (
-        <Tab.Navigator>
+        <Tab.Navigator initialRouteName="Home">
           <Tab.Screen
             name="Home"
             component={Home}
