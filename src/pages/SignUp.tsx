@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  unstable_enableLogBox,
   View,
 } from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -31,6 +32,7 @@ function SignUp({navigation}: SignUpScreenProps) {
   const [activeUserName, setActiveUserName] = useState('고령유저');
   const [loading, setLoading] = useState(false);
 
+  const [identificationCode, setIdentificationCode] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [nickname, setNickname] = useState('');
 
@@ -41,30 +43,35 @@ function SignUp({navigation}: SignUpScreenProps) {
 
   const [otp, setOtp] = useState('');
 
+  const getIdentificationCode = useCallback(() => {
+    RNOtpVerify.getHash()
+      .then(hash => {
+        setIdentificationCode(hash[0]);
+      })
+      .catch(console.log);
+  }, []);
+
+  const startListeningForOtp = () => {
+    RNOtpVerify.getOtp()
+      .then(p => RNOtpVerify.addListener(otpHandler))
+      .catch(p => console.log(p));
+  };
+
   useEffect(() => {
-    const getHash = () =>
-      RNOtpVerify.getHash().then(console.log).catch(console.log);
-
-    const startListeningForOtp = () =>
-      RNOtpVerify.getOtp()
-        .then(p => RNOtpVerify.addListener(otpHandler))
-        .catch(p => console.log(p));
-
-    getHash();
+    getIdentificationCode();
     startListeningForOtp();
   });
 
   const otpHandler = message => {
-    const otp = /(\d{4})/g.exec(message)[1];
-    setOtp(otp);
+    // const otp = /(\d{4})/g.exec(message)[1];
+    // setOtp(otp);
   };
 
   const askPermission = async () => {
-    console.log('Platform.OS >> ', Platform.OS);
     if (Platform.OS !== 'android') {
-      console.log('안드로이드 아님');
       return;
     }
+
     try {
       const result = await request(PERMISSIONS.ANDROID.READ_SMS);
       console.log('result >> ', result);
@@ -103,11 +110,11 @@ function SignUp({navigation}: SignUpScreenProps) {
     try {
       const result = await requestMultiple([
         PERMISSIONS.ANDROID.READ_PHONE_NUMBERS,
+        PERMISSIONS.ANDROID.READ_SMS,
         PERMISSIONS.ANDROID.CAMERA,
-        PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION,
         PERMISSIONS.ANDROID.CALL_PHONE,
         PERMISSIONS.ANDROID.READ_CONTACTS,
-        PERMISSIONS.ANDROID.READ_SMS,
+        PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION,
       ]);
       console.log('Multiple result >> ', result);
     } catch (error) {
@@ -115,37 +122,40 @@ function SignUp({navigation}: SignUpScreenProps) {
     }
   };
 
+  const sendVerifyNumber = useCallback(async () => {
+    console.log('INFO >> ', phoneNumber, identificationCode, nickname);
+    console.log('URL >> ', Config.API_URL);
+    await axios
+      .post(`${Config.API_URL}/message/verify-number/send`, {
+        phoneNumber,
+        identificationCode,
+      })
+      .then(res => {
+        console.log('res.data >> ', res.data);
+      })
+      .catch(console.error);
+  }, []);
+  const onSubmitSignUp = useCallback(async () => {
+    console.log('Try Signup...');
+
+    sendVerifyNumber();
+    //
+    // const res = await axios.get(`${Config.API_URL}`);
+    // // const res = await axios.get('http://localhost:8709');
+    // console.log('res.data >> ', res.data);
+  }, []);
+
   useEffect(() => {
     askPermission();
-    // askPermission2();
-    // askMultiplePermission();
-
-    // requestMultiple([
-    //   PERMISSIONS.ANDROID.CAMERA,
-    //   PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION,
-    // ]).then(statuses => {
-    //   console.log('Camera', statuses[PERMISSIONS.ANDROID.CAMERA]);
-    //   console.log(
-    //     'ACCESS_BACKGROUND_LOCATION',
-    //     statuses[PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION],
-    //   );
-    // });
-
     getRandomNickname();
-    DeviceInfo.getUniqueId().then(uniqueId => {
-      console.log('uniqueId >> ', uniqueId);
-      // iOS: "FCDBD8EF-62FC-4ECB-B2F5-92C9E79AC7F9"
-      // Android: "dd96dec43fb81c97"
-      // Windows: "{2cf7cb3c-da7a-d508-0d7f-696bb51185b4}"
-    });
     getPhoneNumber();
   }, []);
 
   const getRandomNickname = useCallback(() => {
     // TODO: 중복되는 닉네임인지 확인
     const rNickname = randomNameGenerator().toString().replace(/ /gi, '');
-    const response = axios.get(`/user/${rNickname}/nickname-check`);
-    console.log('response >> ', response);
+    // const response = axios.get(`/user/${rNickname}/nickname-check`);
+    // console.log('response >> ', response);
     setNickname(rNickname);
   }, []);
 
@@ -153,7 +163,7 @@ function SignUp({navigation}: SignUpScreenProps) {
     DeviceInfo.getPhoneNumber().then(pNumber => {
       const _pNumber = '0' + pNumber.substring(3, pNumber.length);
       setPhoneNumber(_pNumber);
-      // Android: null return: no permission, empty string: unprogrammed or empty SIM1, e.g. "+15555215558": normal return value
+      return _pNumber;
     });
   }, []);
 
@@ -170,8 +180,6 @@ function SignUp({navigation}: SignUpScreenProps) {
       setNickname(text.trim());
     }
   }, []);
-
-  const onSubmit = useCallback(() => {}, []);
 
   return (
     <KeyboardAwareScrollView>
@@ -274,7 +282,7 @@ function SignUp({navigation}: SignUpScreenProps) {
           returnKeyType="next"
           clearButtonMode="while-editing"
           ref={nameRef}
-          onSubmitEditing={onSubmit}
+          onSubmitEditing={onSubmitSignUp}
         />
       </View>
       <View style={styles.buttonWrapper}>
@@ -288,7 +296,7 @@ function SignUp({navigation}: SignUpScreenProps) {
               : styles.SignUpButton
           }
           disabled={!canGoNext || loading}
-          onPress={onSubmit}>
+          onPress={onSubmitSignUp}>
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
