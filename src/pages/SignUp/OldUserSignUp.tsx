@@ -16,8 +16,8 @@ import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import randomNameGenerator from 'korean-random-names-generator';
 
 function OldUserSignUp() {
-  const [verifyNumberloading, setVerifyNumberloading] = useState(false);
-  const [signUploading, setSignUploading] = useState(false);
+  const [verifyNumberLoading, setVerifyNumberLoading] = useState(false);
+  const [signUpLoading, setSignUpLoading] = useState(false);
 
   const [identificationCode, setIdentificationCode] = useState('');
   const [verifyNumber, setVerifyNumber] = useState('');
@@ -60,7 +60,7 @@ function OldUserSignUp() {
   const sendVerifyNumber = useCallback(async () => {
     console.log('INFO >> ', phoneNumber, identificationCode, nickname);
     console.log('URL >> ', Config.API_URL);
-    setVerifyNumberloading(true);
+    setVerifyNumberLoading(true);
     await axios
       .get(`${Config.API_URL}/`)
       .then(res => {
@@ -78,12 +78,20 @@ function OldUserSignUp() {
       })
       .catch(console.error)
       .finally(() => {
-        setVerifyNumberloading(false);
+        setVerifyNumberLoading(false);
       });
   }, [phoneNumber, identificationCode, nickname]);
 
   const onSubmitSignUp = useCallback(async () => {
     console.log('Try Signup...');
+
+    setSignUpLoading(true);
+
+    setTimeout(() => {
+      setSignUpLoading(false);
+    }, 4000);
+
+    return;
     await axios
       .post(`${Config.API_URL}/old-user/signup`, {
         phoneNumber,
@@ -94,7 +102,7 @@ function OldUserSignUp() {
       })
       .catch(console.error)
       .finally(() => {
-        setVerifyNumberloading(false);
+        setVerifyNumberLoading(false);
       });
   }, [phoneNumber, identificationCode, nickname]);
 
@@ -146,13 +154,42 @@ function OldUserSignUp() {
   return (
     <KeyboardAwareScrollView>
       <View style={styles.oneClickSignUpButtonWrapper}>
-        <Pressable style={styles.oneClickSignUpButton}>
-          <Text style={{fontSize: 28, color: '#000000', fontWeight: 'bold'}}>
-            원클릭
-          </Text>
-          <Text style={{fontSize: 28, color: '#000000', fontWeight: 'bold'}}>
-            가입하기
-          </Text>
+        <Pressable
+          style={
+            signUpLoading
+              ? [styles.oneClickSignUpButton, styles.oneClickSignUpButtonActive]
+              : styles.oneClickSignUpButton
+          }
+          onPress={onSubmitSignUp}>
+          <View style={{justifyContent: 'center', alignItems: 'center'}}>
+            {signUpLoading ? (
+              <View>
+                <ActivityIndicator color="#1f6038" size={240} />
+                <Text
+                  style={{
+                    fontSize: 18,
+                    color: '#1f6038',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    position: 'absolute',
+                    left: 70,
+                    top: 90,
+                  }}>
+                  잠시만{'\n'}기다려주세요.
+                </Text>
+              </View>
+            ) : (
+              <Text
+                style={{
+                  fontSize: 28,
+                  color: '#1f6038',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                }}>
+                원클릭{'\n'}가입하기
+              </Text>
+            )}
+          </View>
         </Pressable>
       </View>
       <View style={styles.inputWrapper}>
@@ -172,10 +209,10 @@ function OldUserSignUp() {
           blurOnSubmit={false}
         />
         <Pressable
-          disabled={verifyNumberloading}
+          disabled={verifyNumberLoading}
           style={styles.sendVerifyNumberButton}
           onPress={sendVerifyNumber}>
-          {verifyNumberloading ? (
+          {verifyNumberLoading ? (
             <ActivityIndicator color="white" />
           ) : (
             <Text style={{color: '#fff'}}>휴대폰 인증</Text>
@@ -228,9 +265,9 @@ function OldUserSignUp() {
                 )
               : styles.SignUpButton
           }
-          disabled={!canGoNext || signUploading}
+          disabled={!canGoNext || signUpLoading}
           onPress={onSubmitSignUp}>
-          {signUploading ? (
+          {signUpLoading ? (
             <ActivityIndicator color="white" />
           ) : (
             <Text style={styles.SignUpButtonText}>고령유저&nbsp;회원가입</Text>
@@ -242,6 +279,10 @@ function OldUserSignUp() {
 }
 
 const styles = StyleSheet.create({
+  oneClickSignUpButtonActive: {
+    borderWidth: 0,
+  },
+
   oneClickSignUpButtonWrapper: {
     marginVertical: 32,
     justifyContent: 'center',
@@ -251,7 +292,8 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    borderWidth: 1,
+    borderWidth: 20,
+    borderColor: '#1f6038',
     justifyContent: 'center',
     alignItems: 'center',
   },
