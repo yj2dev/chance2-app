@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../AppInner';
+import {RootStackParamList} from '../../../AppInner';
 import axios from 'axios';
 import Config from 'react-native-config';
 import randomNameGenerator from 'korean-random-names-generator';
@@ -20,9 +20,10 @@ import RNOtpVerify from 'react-native-otp-verify';
 
 type SignUpScreenProps = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
-function SignUp({navigation}: SignUpScreenProps) {
+function SignUp0720({navigation}: SignUpScreenProps) {
   const [activeUserName, setActiveUserName] = useState('고령유저');
-  const [loading, setLoading] = useState(false);
+  const [verifyNumberloading, setVerifyNumberloading] = useState(false);
+  const [signUploading, setSignUploading] = useState(false);
 
   const [identificationCode, setIdentificationCode] = useState('');
   const [verifyNumber, setVerifyNumber] = useState('');
@@ -33,7 +34,7 @@ function SignUp({navigation}: SignUpScreenProps) {
   const phoneNumberRef = useRef<TextInput | null>(null);
   const nameRef = useRef<TextInput | null>(null);
 
-  const canGoNext = phoneNumber && nickname;
+  const canGoNext = phoneNumber && verifyNumber && nickname;
 
   useEffect(() => {
     getIdentificationCode(); // 문자 식별코드 생성
@@ -45,6 +46,7 @@ function SignUp({navigation}: SignUpScreenProps) {
   const getIdentificationCode = useCallback(() => {
     RNOtpVerify.getHash()
       .then(hash => {
+        console.log(hash);
         setIdentificationCode(hash[0]);
       })
       .catch(console.log);
@@ -57,14 +59,21 @@ function SignUp({navigation}: SignUpScreenProps) {
   };
 
   const otpHandler = (message: string) => {
-    const number = message.replace(/[^0-9]\g/, '').substring(0, 4);
+    const number = message.replace(/[^0-9]/g, '').substring(0, 4);
     setVerifyNumber(number);
   };
 
   const sendVerifyNumber = useCallback(async () => {
     console.log('INFO >> ', phoneNumber, identificationCode, nickname);
     console.log('URL >> ', Config.API_URL);
-    return;
+    setVerifyNumberloading(true);
+    await axios
+      .get(`${Config.API_URL}/`)
+      .then(res => {
+        console.log('res.data >> ', res.data);
+      })
+      .catch(console.error);
+
     await axios
       .post(`${Config.API_URL}/message/verify-number/send`, {
         phoneNumber,
@@ -73,17 +82,26 @@ function SignUp({navigation}: SignUpScreenProps) {
       .then(res => {
         console.log('res.data >> ', res.data);
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => {
+        setVerifyNumberloading(false);
+      });
   }, [phoneNumber, identificationCode, nickname]);
 
   const onSubmitSignUp = useCallback(async () => {
     console.log('Try Signup...');
-
-    sendVerifyNumber();
-    //
-    // const res = await axios.get(`${Config.API_URL}`);
-    // // const res = await axios.get('http://localhost:8709');
-    // console.log('res.data >> ', res.data);
+    await axios
+      .post(`${Config.API_URL}/old-user/signup`, {
+        phoneNumber,
+        nickname,
+      })
+      .then(res => {
+        console.log('res.data >> ', res.data);
+      })
+      .catch(console.error)
+      .finally(() => {
+        setVerifyNumberloading(false);
+      });
   }, [phoneNumber, identificationCode, nickname]);
 
   const getPhoneNumber = useCallback(() => {
@@ -144,7 +162,7 @@ function SignUp({navigation}: SignUpScreenProps) {
               : styles.signUpType
           }>
           <Image
-            source={require('../assets/images/default-user.png')}
+            source={require('../../assets/images/default-user.png')}
             style={styles.signUpTypeImage}
           />
           <Text
@@ -166,7 +184,7 @@ function SignUp({navigation}: SignUpScreenProps) {
               : styles.signUpType
           }>
           <Image
-            source={require('../assets/images/old-user.png')}
+            source={require('../../assets/images/old-user.png')}
             style={styles.signUpTypeImage}
           />
           <Text
@@ -188,7 +206,7 @@ function SignUp({navigation}: SignUpScreenProps) {
               : styles.signUpType
           }>
           <Image
-            source={require('../assets/images/institution-user.png')}
+            source={require('../../assets/images/institution-user.png')}
             style={styles.signUpTypeImage}
           />
           <Text
@@ -217,6 +235,16 @@ function SignUp({navigation}: SignUpScreenProps) {
           onSubmitEditing={() => nameRef.current?.focus()}
           blurOnSubmit={false}
         />
+        <Pressable
+          disabled={verifyNumberloading}
+          style={styles.sendVerifyNumberButton}
+          onPress={sendVerifyNumber}>
+          {verifyNumberloading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={{color: '#fff'}}>휴대폰 인증</Text>
+          )}
+        </Pressable>
       </View>
 
       {!showInputVerifyNumber && (
@@ -264,9 +292,9 @@ function SignUp({navigation}: SignUpScreenProps) {
                 )
               : styles.SignUpButton
           }
-          disabled={!canGoNext || loading}
+          disabled={!canGoNext || signUploading}
           onPress={onSubmitSignUp}>
-          {loading ? (
+          {signUploading ? (
             <ActivityIndicator color="white" />
           ) : (
             <Text style={styles.SignUpButtonText}>
@@ -280,6 +308,16 @@ function SignUp({navigation}: SignUpScreenProps) {
 }
 
 const styles = StyleSheet.create({
+  sendVerifyNumberButton: {
+    position: 'absolute',
+    right: 0,
+    marginTop: 20,
+    marginRight: 24,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#1f6038',
+  },
+
   signUpTypeActive: {
     backgroundColor: '#1f6038',
   },
@@ -313,6 +351,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   inputWrapper: {
+    position: 'relative',
     paddingHorizontal: 24,
     paddingVertical: 20,
   },
@@ -340,4 +379,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SignUp;
+export default SignUp0720;

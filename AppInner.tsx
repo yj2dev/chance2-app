@@ -1,6 +1,6 @@
 import MyPage from './src/pages/MyPage';
 import SignIn from './src/pages/SignIn';
-import SignUp from './src/pages/SignUp';
+import SignUp from './src/pages/SignUp/SignUp';
 import Home from './src/pages/Home';
 import {NavigationContainer} from '@react-navigation/native';
 import * as React from 'react';
@@ -22,6 +22,9 @@ import AntDesignIcon from 'react-native-vector-icons/AntDesign';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import usePermissions from './src/hooks/usePermissions';
+import OldUserSignUp from './src/pages/SignUp/OldUserSignUp';
+import DefaultUserSignUp from './src/pages/SignUp/DefaultUserSignUp';
+import InstitutionUserSignUp from './src/pages/SignUp/InstitutionUserSignUp';
 
 export type LoggedInParamList = {
   Orders: undefined;
@@ -89,46 +92,34 @@ function AppInner() {
           />
         </Tab.Navigator>
       ) : (
-        <Tab.Navigator>
-          <Tab.Screen
-            name="Home"
-            component={Home}
-            options={{
-              ...TabOptionStyle,
-              title: '홈',
-              headerShown: false,
-              tabBarIcon: ({focused, color = '#666666'}) => (
-                <AntDesignIcon name="home" size={20} color={color} />
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="SignIn"
-            component={SignIn}
-            options={{
-              ...TabOptionStyle,
-              title: '로그인',
-              tabBarIcon: ({focused, color = '#666666'}) => (
-                <FontAwesome name="sign-in" size={20} color={color} />
-              ),
-            }}
-          />
-          <Tab.Screen
+        <Stack.Navigator>
+          <Stack.Screen
             name="SignUp"
             component={SignUp}
             options={{
               ...TabOptionStyle,
               title: '회원가입',
-              tabBarIcon: ({focused, color = '#666666'}) => (
-                <MaterialCommunityIcons
-                  name="card-account-details-outline"
-                  size={20}
-                  color={color}
-                />
-              ),
             }}
           />
-        </Tab.Navigator>
+          <Stack.Screen
+            name="OldUserSignUp"
+            component={OldUserSignUp}
+            options={{
+              ...TabOptionStyle,
+              title: '고령유저 회원가입',
+            }}
+          />
+          <Stack.Screen
+            name="DefaultUserSignUp"
+            component={DefaultUserSignUp}
+            options={{...TabOptionStyle, title: '일반유저 회원가입'}}
+          />
+          <Stack.Screen
+            name="InstitutionUserSignUp"
+            component={InstitutionUserSignUp}
+            options={{...TabOptionStyle, title: '기관유저 회원가입'}}
+          />
+        </Stack.Navigator>
       )}
     </NavigationContainer>
   );

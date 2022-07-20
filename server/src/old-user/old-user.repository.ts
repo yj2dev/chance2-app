@@ -6,6 +6,16 @@ import { InjectModel } from '@nestjs/mongoose';
 @Injectable()
 export class OldUserRepository {
   constructor(
-    @InjectModel(OldUser.name) private readonly user: Model<OldUser>,
+    @InjectModel(OldUser.name) private readonly oldUser: Model<OldUser>,
   ) {}
+
+  async createUser(
+    phoneNumber: string,
+    nickname: string,
+  ): Promise<OldUser | null> {
+    const result = await this.oldUser.create({ phoneNumber, nickname });
+    console.log('result >> ', result);
+
+    return result;
+  }
 }
