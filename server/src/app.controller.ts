@@ -12,7 +12,7 @@ export class AppController {
 
   @Get('apple')
   getApple(): string {
-    return 'Apple';
+    return 'APPLE';
   }
 
   @Post()
