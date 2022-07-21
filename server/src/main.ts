@@ -6,7 +6,7 @@ import { HttpExceptionFilter } from './common/exception/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {});
-  const PORT = process.env.PORT || 8000;
+  const PORT: number = parseInt(process.env.PORT) || 8000;
   app.enableCors({
     origin: true,
     credentials: true,

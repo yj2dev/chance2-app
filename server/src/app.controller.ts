@@ -10,6 +10,11 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Get('apple')
+  getApple(): string {
+    return 'Apple';
+  }
+
   @Post()
   rootPostHello(): string {
     return 'HelloPost';
